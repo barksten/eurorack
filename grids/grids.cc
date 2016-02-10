@@ -279,7 +279,7 @@ void ScanPots() {
   }
   
   if (parameter == PARAMETER_NONE) {
-    uint8_t bpm = adc.Read8(ADC_CHANNEL_TEMPO);
+    uint8_t bpm = adc.Read8(ADC_CHANNEL_HH_DENSITY_CV);
     bpm = U8U8MulShift8(bpm, 220) + 20;
     if (bpm != clock.bpm() && !clock.locked()) {
       clock.Update(bpm, pattern_generator.clock_resolution());
@@ -290,7 +290,7 @@ void ScanPots() {
     settings->options.drums.randomness = ~adc.Read8(ADC_CHANNEL_RANDOMNESS_CV);
     settings->density[0] = ~adc.Read8(ADC_CHANNEL_BD_DENSITY_CV);
     settings->density[1] = ~adc.Read8(ADC_CHANNEL_SD_DENSITY_CV);
-    settings->density[2] = ~adc.Read8(ADC_CHANNEL_HH_DENSITY_CV);
+    settings->density[2] = ~adc.Read8(ADC_CHANNEL_SD_DENSITY_CV);
   } else {
     for (uint8_t i = 0; i < 8; ++i) {
       int16_t value = adc.Read8(i);
@@ -351,7 +351,7 @@ void Init() {
   
   clock.Init();
   adc.Init();
-  adc.set_num_inputs(ADC_CHANNEL_LAST);
+  adc.set_num_inputs(ADC_CHANNEL_HH_DENSITY_CV);
   Adc::set_reference(ADC_DEFAULT);
   Adc::set_alignment(ADC_LEFT_ALIGNED);
   pattern_generator.Init();
