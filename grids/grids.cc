@@ -261,13 +261,13 @@ ISR(TIMER2_COMPA_vect, ISR_NOBLOCK) {
   UpdateLeds();
 }
 
-static int16_t pot_values[8];
+static int16_t pot_values[6];
 
 void ScanPots() {
   if (long_press_detected) {
     if (parameter == PARAMETER_NONE) {
       // Freeze pot values
-      for (uint8_t i = 0; i < 8; ++i) {
+      for (uint8_t i = 0; i < 6; ++i) {
         pot_values[i] = adc.Read8(i);
       }
       parameter = PARAMETER_WAITING;
@@ -292,7 +292,7 @@ void ScanPots() {
     settings->density[1] = ~adc.Read8(ADC_CHANNEL_SD_DENSITY_CV);
     settings->density[2] = ~adc.Read8(ADC_CHANNEL_HH_DENSITY_CV);
   } else {
-    for (uint8_t i = 0; i < 8; ++i) {
+    for (uint8_t i = 0; i < 6; ++i) {
       int16_t value = adc.Read8(i);
       int16_t delta = value - pot_values[i];
       if (delta < 0) {
@@ -331,10 +331,6 @@ void ScanPots() {
             pattern_generator.set_gate_mode(!(value & 0x80));
             break;
 
-          case ADC_CHANNEL_RANDOMNESS_CV:
-            parameter = PARAMETER_CLOCK_OUTPUT;
-            pattern_generator.set_output_clock(!(value & 0x80));
-            break;
         }
       }
     }
