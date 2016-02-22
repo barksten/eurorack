@@ -79,13 +79,13 @@ inline void UpdateLeds() {
       case PARAMETER_CLOCK_RESOLUTION:
         pattern |= LED_BD >> pattern_generator.clock_resolution();
         break;
-        
+
       case PARAMETER_CLOCK_OUTPUT:
         if (pattern_generator.output_clock()) {
           pattern |= LED_ALL;
         }
         break;
-      
+
       case PARAMETER_SWING:
         if (pattern_generator.swing()) {
           pattern |= LED_ALL;
@@ -97,13 +97,13 @@ inline void UpdateLeds() {
           pattern |= LED_ALL;
         }
         break;
-      
+
       case PARAMETER_TAP_TEMPO:
         if (pattern_generator.tap_tempo()) {
           pattern |= LED_ALL;
         }
         break;
-        
+
       case PARAMETER_GATE_MODE:
         if (pattern_generator.gate_mode()) {
           pattern |= LED_ALL;
@@ -133,11 +133,11 @@ uint8_t ticks_granularity[] = { 6, 3, 1 };
 
 inline void HandleClockResetInputs() {
   static uint8_t previous_inputs;
-  
+
   uint8_t inputs_value = ~inputs.Read();
   uint8_t num_ticks = 0;
   uint8_t increment = ticks_granularity[pattern_generator.clock_resolution()];
-  
+
   // CLOCK
   if (clock.bpm() < 40 && !clock.locked()) {
     if ((inputs_value & INPUT_CLOCK) && !(previous_inputs & INPUT_CLOCK)) {
@@ -170,12 +170,12 @@ inline void HandleClockResetInputs() {
     pattern_generator.Reset();
 
     // !! HACK AHEAD !!
-    // 
+    //
     // Earlier versions of the firmware retriggered the outputs whenever a
     // RESET signal was received. This allowed for nice drill'n'bass effects,
     // but made synchronization with another sequencer a bit glitchy (risk of
     // double notes at the beginning of a pattern). It was later decided
-    // to remove this behaviour and make the RESET transparent (just set the 
+    // to remove this behaviour and make the RESET transparent (just set the
     // step index without producing any trigger) - similar to the MIDI START
     // message. However, the factory testing script relies on the old behaviour.
     // To solve this problem, we reproduce this behaviour the first 5 times the
@@ -189,7 +189,7 @@ inline void HandleClockResetInputs() {
     }
   }
   previous_inputs = inputs_value;
-  
+
   if (num_ticks) {
     swing_amount = pattern_generator.swing_amount();
     pattern_generator.TickClock(num_ticks);
@@ -206,12 +206,12 @@ enum SwitchState {
 inline void HandleTapButton() {
   static uint8_t switch_state = 0xff;
   static uint16_t switch_hold_time = 0;
-  
+
   switch_state = switch_state << 1;
   if (inputs.Read() & INPUT_SW_RESET) {
     switch_state |= 1;
   }
-  
+
   if (switch_state == SWITCH_STATE_JUST_PRESSED) {
     if (parameter == PARAMETER_NONE) {
       if (!pattern_generator.tap_tempo()) {
@@ -244,7 +244,7 @@ inline void HandleTapButton() {
 
 ISR(TIMER2_COMPA_vect, ISR_NOBLOCK) {
   static uint8_t switch_debounce_prescaler;
-  
+
   ++tap_duration;
   ++switch_debounce_prescaler;
   if (switch_debounce_prescaler >= 10) {
@@ -252,10 +252,10 @@ ISR(TIMER2_COMPA_vect, ISR_NOBLOCK) {
     HandleTapButton();
     switch_debounce_prescaler = 0;
   }
-  
+
   HandleClockResetInputs();
   adc.Scan();
-  
+
   pattern_generator.IncrementPulseCounter();
   UpdateShiftRegister();
   UpdateLeds();
@@ -277,9 +277,9 @@ void ScanPots() {
     }
     long_press_detected = false;
   }
-  
+
   if (parameter == PARAMETER_NONE) {
-    uint8_t bpm = adc.Read8(ADC_CHANNEL_HH_DENSITY_CV);
+    uint8_t bpm = adc.Read8(ADC_CHANNEL_TEMPO);
     bpm = U8U8MulShift8(bpm, 220) + 20;
     if (bpm != clock.bpm() && !clock.locked()) {
       clock.Update(bpm, pattern_generator.clock_resolution());
@@ -287,10 +287,10 @@ void ScanPots() {
     PatternGeneratorSettings* settings = pattern_generator.mutable_settings();
     settings->options.drums.x = ~adc.Read8(ADC_CHANNEL_X_CV);
     settings->options.drums.y = ~adc.Read8(ADC_CHANNEL_Y_CV);
-    settings->options.drums.randomness = ~adc.Read8(ADC_CHANNEL_RANDOMNESS_CV);
+    //settings->options.drums.randomness = ~adc.Read8(ADC_CHANNEL_RANDOMNESS_CV);
     settings->density[0] = ~adc.Read8(ADC_CHANNEL_BD_DENSITY_CV);
     settings->density[1] = ~adc.Read8(ADC_CHANNEL_SD_DENSITY_CV);
-    settings->density[2] = ~adc.Read8(ADC_CHANNEL_SD_DENSITY_CV);
+    settings->density[2] = ~adc.Read8(ADC_CHANNEL_HH_DENSITY_CV);
   } else {
     for (uint8_t i = 0; i < 8; ++i) {
       int16_t value = adc.Read8(i);
@@ -307,7 +307,7 @@ void ScanPots() {
             clock.Update(clock.bpm(), pattern_generator.clock_resolution());
             pattern_generator.Reset();
             break;
-            
+
           case ADC_CHANNEL_SD_DENSITY_CV:
             parameter = PARAMETER_TAP_TEMPO;
             pattern_generator.set_tap_tempo(!(value & 0x80));
@@ -344,11 +344,11 @@ void ScanPots() {
 void Init() {
   sei();
   UCSR0B = 0;
-  
+
   leds.set_mode(DIGITAL_OUTPUT);
   inputs.set_mode(DIGITAL_INPUT);
   inputs.EnablePullUpResistors();
-  
+
   clock.Init();
   adc.Init();
   adc.set_num_inputs(ADC_CHANNEL_HH_DENSITY_CV);
@@ -357,7 +357,7 @@ void Init() {
   pattern_generator.Init();
   shift_register.Init();
   midi.Init();
-  
+
   TCCR2A = _BV(WGM21);
   TCCR2B = 3;
   OCR2A = kUpdatePeriod - 1;
