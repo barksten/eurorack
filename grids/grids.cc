@@ -351,7 +351,7 @@ void Init() {
 
   clock.Init();
   adc.Init();
-  adc.set_num_inputs(ADC_CHANNEL_LAST - 2 ); // PDIP28 is missing last two ADC
+  adc.set_num_inputs(ADC_CHANNEL_LAST - 1 ); // PDIP28 is missing last two ADC
   Adc::set_reference(ADC_DEFAULT);
   Adc::set_alignment(ADC_LEFT_ALIGNED);
   pattern_generator.Init();
