@@ -261,13 +261,13 @@ ISR(TIMER2_COMPA_vect, ISR_NOBLOCK) {
   UpdateLeds();
 }
 
-static int16_t pot_values[6];
+static int16_t pot_values[8];
 
 void ScanPots() {
   if (long_press_detected) {
     if (parameter == PARAMETER_NONE) {
       // Freeze pot values
-      for (uint8_t i = 0; i < 6; ++i) {
+      for (uint8_t i = 0; i < 8; ++i) {
         pot_values[i] = adc.Read8(i);
       }
       parameter = PARAMETER_WAITING;
@@ -279,7 +279,7 @@ void ScanPots() {
   }
 
   if (parameter == PARAMETER_NONE) {
-    uint8_t bpm = adc.Read8(ADC_CHANNEL_TEMPO);
+    uint8_t bpm = adc.Read8(ADC_CHANNEL_RANDOMNESS_CV);
     bpm = U8U8MulShift8(bpm, 220) + 20;
     if (bpm != clock.bpm() && !clock.locked()) {
       clock.Update(bpm, pattern_generator.clock_resolution());
@@ -292,7 +292,7 @@ void ScanPots() {
     settings->density[1] = ~adc.Read8(ADC_CHANNEL_SD_DENSITY_CV);
     settings->density[2] = ~adc.Read8(ADC_CHANNEL_HH_DENSITY_CV);
   } else {
-    for (uint8_t i = 0; i < 6; ++i) {
+    for (uint8_t i = 0; i < 8; ++i) {
       int16_t value = adc.Read8(i);
       int16_t delta = value - pot_values[i];
       if (delta < 0) {
@@ -331,6 +331,10 @@ void ScanPots() {
             pattern_generator.set_gate_mode(!(value & 0x80));
             break;
 
+          case ADC_CHANNEL_RANDOMNESS_CV:
+            parameter = PARAMETER_CLOCK_OUTPUT;
+            pattern_generator.set_output_clock(!(value & 0x80));
+            break;
         }
       }
     }
@@ -347,7 +351,7 @@ void Init() {
 
   clock.Init();
   adc.Init();
-  adc.set_num_inputs(ADC_CHANNEL_HH_DENSITY_CV);
+  adc.set_num_inputs(ADC_CHANNEL_LAST - 2 ); // PDIP28 is missing last two ADC
   Adc::set_reference(ADC_DEFAULT);
   Adc::set_alignment(ADC_LEFT_ALIGNED);
   pattern_generator.Init();
